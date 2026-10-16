@@ -1,0 +1,16 @@
+# Build
+target/
+!.mvn/wrapper/maven-wrapper.jar
+
+# IDEs
+.idea/
+*.iml
+.vscode/
+.classpath
+.project
+.settings/
+
+# Secrets and local config — never in git
+.env
+keys/
+*.pem
