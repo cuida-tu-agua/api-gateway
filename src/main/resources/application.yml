@@ -1,0 +1,142 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: api-gateway
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      timeout: 2s
+      connect-timeout: 2s
+  cloud:
+    gateway:
+      server:
+        webflux:
+          httpclient:
+            connect-timeout: 2000      # ms to open the connection to a service
+            response-timeout: 15s      # max time waiting for a service answer
+          default-filters:
+            # The gateway answers CORS; the services must not see the browser Origin (see Paso 7)
+            - RemoveRequestHeader=Origin
+          routes:
+            # ?? 1. Never expose service-to-service or technical endpoints ??????????????????
+            - id: blocked
+              uri: no://op
+              order: -1
+              predicates:
+                - Path=/*/internal/**,/*/actuator/**,/*/openapi/**,/*/health
+              filters:
+                - SetStatus=404
+
+            # ?? 2. ms-iam public auth endpoints: strict limit per IP ??????????????????????
+            - id: iam-auth
+              uri: ${services.iam}
+              order: 0
+              predicates:
+                - Path=/iam/api/auth/**
+              filters:
+                - StripPrefix=1
+                - name: RequestRateLimiter
+                  args:
+                    rate-limiter: "#{@authRateLimiter}"
+                    key-resolver: "#{@ipKeyResolver}"
+
+            # ?? 3. One route per service ??????????????????????????????????????????????????
+            - id: iam
+              uri: ${services.iam}
+              order: 1
+              predicates:
+                - Path=/iam/**
+              filters:
+                - StripPrefix=1
+                - name: RequestRateLimiter
+                  args:
+                    rate-limiter: "#{@apiRateLimiter}"
+                    key-resolver: "#{@userKeyResolver}"
+
+            - id: places
+              uri: ${services.places}
+              predicates:
+                - Path=/places/**
+              filters:
+                - StripPrefix=1
+                - name: RequestRateLimiter
+                  args:
+                    rate-limiter: "#{@apiRateLimiter}"
+                    key-resolver: "#{@userKeyResolver}"
+
+            - id: devices
+              uri: ${services.devices}
+              predicates:
+                - Path=/devices/**
+              filters:
+                - StripPrefix=1
+                - name: RequestRateLimiter
+                  args:
+                    rate-limiter: "#{@apiRateLimiter}"
+                    key-resolver: "#{@userKeyResolver}"
+
+            - id: consumption
+              uri: ${services.consumption}
+              predicates:
+                - Path=/consumption/**
+              filters:
+                - StripPrefix=1
+                - name: RequestRateLimiter
+                  args:
+                    rate-limiter: "#{@apiRateLimiter}"
+                    key-resolver: "#{@userKeyResolver}"
+
+            - id: valve
+              uri: ${services.valve}
+              predicates:
+                - Path=/valve/**
+              filters:
+                - StripPrefix=1
+                - name: RequestRateLimiter
+                  args:
+                    rate-limiter: "#{@apiRateLimiter}"
+                    key-resolver: "#{@userKeyResolver}"
+
+            - id: notifications
+              uri: ${services.notifications}
+              predicates:
+                - Path=/notifications/**
+              filters:
+                - StripPrefix=1
+                - name: RequestRateLimiter
+                  args:
+                    rate-limiter: "#{@apiRateLimiter}"
+                    key-resolver: "#{@userKeyResolver}"
+
+# Where each service lives (override with environment variables in Docker / production)
+services:
+  iam: ${IAM_URL:http://localhost:3001}
+  places: ${PLACES_URL:http://localhost:3002}
+  devices: ${DEVICES_URL:http://localhost:3003}
+  consumption: ${CONSUMPTION_URL:http://localhost:3004}
+  valve: ${VALVE_URL:http://localhost:3005}
+  notifications: ${NOTIFICATIONS_URL:http://localhost:3006}
+
+gateway:
+  jwt:
+    issuer: ${IAM_JWT_ISSUER:https://iam.cuidatuagua.local}     # MUST equal iam.jwt.issuer in ms-iam
+    public-key: ${IAM_PUBLIC_KEY:file:../ms-iam/keys/public.pem}
+  cors:
+    allowed-origins: ${GATEWAY_CORS_ALLOWED_ORIGINS:http://localhost:8081,http://localhost:19006}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: never
+
+logging:
+  level:
+    gateway.access: INFO
+    org.springframework.cloud.gateway: WARN
