@@ -1,0 +1,23 @@
+# API Gateway in Docker. The six services keep running with "dotnet run" / "mvnw spring-boot:run" on the PC,
+# and Redis comes from the ms-iam compose (sy_water_redis). host.docker.internal = your PC from the container.
+services:
+  api-gateway:
+    build: .
+    container_name: sy_water_gateway
+    ports:
+      - "8080:8080"
+    environment:
+      REDIS_HOST: host.docker.internal
+      IAM_URL: http://host.docker.internal:3001
+      PLACES_URL: http://host.docker.internal:3002
+      DEVICES_URL: http://host.docker.internal:3003
+      CONSUMPTION_URL: http://host.docker.internal:3004
+      VALVE_URL: http://host.docker.internal:3005
+      NOTIFICATIONS_URL: http://host.docker.internal:3006
+      IAM_PUBLIC_KEY: file:/keys/public.pem
+      GATEWAY_CORS_ALLOWED_ORIGINS: ${GATEWAY_CORS_ALLOWED_ORIGINS:-http://localhost:8081}
+    volumes:
+      - ../ms-iam/keys/public.pem:/keys/public.pem:ro
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
