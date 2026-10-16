@@ -37,7 +37,10 @@ public class SecurityConfig {
             "/iam/api/auth/password/forgot", "/iam/api/auth/password/reset",
     };
 
-    static final String[] BLOCKED = {"/*/internal/**", "/*/actuator/**", "/*/openapi/**", "/*/health"};
+    static final String[] BLOCKED = {"/*/internal/**", "/*/actuator/**", "/*/health"};
+
+    /** OpenAPI documents of the services, read by the shared Swagger UI (only published where infra enables them). */
+    static final String[] OPENAPI_DOCS = {"/*/openapi/**", "/iam/v3/api-docs", "/iam/v3/api-docs/**"};
 
     static final String[] ADMIN_ONLY = {"/iam/api/admin/**", "/places/api/admin/**", "/devices/api/admin/**"};
 
@@ -61,6 +64,7 @@ public class SecurityConfig {
                         .pathMatchers(BLOCKED).permitAll()                            // → 404 route
                         .pathMatchers(HttpMethod.POST, PUBLIC_AUTH_POSTS).permitAll()
                         .pathMatchers(HttpMethod.GET, "/iam/api/avatars/**").permitAll()
+                        .pathMatchers(HttpMethod.GET, OPENAPI_DOCS).permitAll()
                         .pathMatchers(ADMIN_ONLY).hasRole("ADMIN")
                         .anyExchange().authenticated())
                 .oauth2ResourceServer(oauth -> oauth

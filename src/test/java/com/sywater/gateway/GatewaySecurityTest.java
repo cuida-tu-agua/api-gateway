@@ -135,7 +135,15 @@ class GatewaySecurityTest {
     void internalEndpointsAreNotExposed() {
         client.get().uri("/devices/internal/metrics").exchange().expectStatus().isNotFound();
         client.get().uri("/iam/actuator/health").exchange().expectStatus().isNotFound();
-        client.get().uri("/places/openapi/v1.json").exchange().expectStatus().isNotFound();
+    }
+
+    @Test
+    void openApiDocumentsAreRoutedWithoutToken() {
+        // The services are down in the tests: the gateway must let the request through (not 401/403/404)
+        client.get().uri("/places/openapi/v1.json").exchange()
+                .expectStatus().value(status -> assertThat(status).isNotIn(401, 403, 404));
+        client.get().uri("/iam/v3/api-docs").exchange()
+                .expectStatus().value(status -> assertThat(status).isNotIn(401, 403, 404));
     }
 
     @Test
