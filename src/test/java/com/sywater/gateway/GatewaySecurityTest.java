@@ -115,6 +115,21 @@ class GatewaySecurityTest {
     }
 
     @Test
+    void googleSignInIsPublic() {
+        for (String path : new String[]{"/iam/api/auth/google/status", "/iam/api/auth/google/start?redirect=x",
+                "/iam/api/auth/google/callback?code=c&state=s"}) {
+            client.get().uri(path)
+                    .exchange()
+                    .expectStatus().value(status -> assertThat(status).as(path).isNotIn(401, 403, 404));
+        }
+        client.post().uri("/iam/api/auth/google/exchange")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue("{\"code\":\"x\"}")
+                .exchange()
+                .expectStatus().value(status -> assertThat(status).isNotIn(401, 403, 404));
+    }
+
+    @Test
     void adminRouteWithUserRoleIs403() throws Exception {
         client.get().uri("/iam/api/admin/users")
                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + token(ISSUER, List.of("USER")))
