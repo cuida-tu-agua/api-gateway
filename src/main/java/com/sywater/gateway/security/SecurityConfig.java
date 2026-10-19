@@ -35,6 +35,12 @@ public class SecurityConfig {
             "/iam/api/auth/register", "/iam/api/auth/verify-email", "/iam/api/auth/verify-email/resend",
             "/iam/api/auth/login", "/iam/api/auth/refresh",
             "/iam/api/auth/password/forgot", "/iam/api/auth/password/reset",
+            "/iam/api/auth/google/exchange",
+    };
+
+    /** HU-004 "Continuar con Google": opened by the browser / phone without a token (start, Google's callback). */
+    static final String[] PUBLIC_AUTH_GETS = {
+            "/iam/api/auth/google/status", "/iam/api/auth/google/start", "/iam/api/auth/google/callback",
     };
 
     static final String[] BLOCKED = {"/*/internal/**", "/*/actuator/**", "/*/health"};
@@ -63,6 +69,7 @@ public class SecurityConfig {
                         .pathMatchers("/actuator/health").permitAll()                 // gateway health
                         .pathMatchers(BLOCKED).permitAll()                            // → 404 route
                         .pathMatchers(HttpMethod.POST, PUBLIC_AUTH_POSTS).permitAll()
+                        .pathMatchers(HttpMethod.GET, PUBLIC_AUTH_GETS).permitAll()
                         .pathMatchers(HttpMethod.GET, "/iam/api/avatars/**").permitAll()
                         .pathMatchers(HttpMethod.GET, OPENAPI_DOCS).permitAll()
                         .pathMatchers(ADMIN_ONLY).hasRole("ADMIN")
