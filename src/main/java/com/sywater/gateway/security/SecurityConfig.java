@@ -43,6 +43,11 @@ public class SecurityConfig {
             "/iam/api/auth/google/status", "/iam/api/auth/google/start", "/iam/api/auth/google/callback",
     };
 
+    /** HU-039..HU-041: a guest opens the shared link without signing in; only these two read-only GETs are public. */
+    static final String[] PUBLIC_GUEST_GETS = {
+            "/places/api/guest/*", "/consumption/api/guest/*/consumption",
+    };
+
     static final String[] BLOCKED = {"/*/internal/**", "/*/actuator/**", "/*/health"};
 
     /** OpenAPI documents of the services, read by the shared Swagger UI (only published where infra enables them). */
@@ -70,6 +75,7 @@ public class SecurityConfig {
                         .pathMatchers(BLOCKED).permitAll()                            // → 404 route
                         .pathMatchers(HttpMethod.POST, PUBLIC_AUTH_POSTS).permitAll()
                         .pathMatchers(HttpMethod.GET, PUBLIC_AUTH_GETS).permitAll()
+                        .pathMatchers(HttpMethod.GET, PUBLIC_GUEST_GETS).permitAll()
                         .pathMatchers(HttpMethod.GET, "/iam/api/avatars/**").permitAll()
                         .pathMatchers(HttpMethod.GET, OPENAPI_DOCS).permitAll()
                         .pathMatchers(ADMIN_ONLY).hasRole("ADMIN")
