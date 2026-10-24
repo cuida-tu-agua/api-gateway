@@ -9,6 +9,7 @@ Single entry point of Cuida Tu Agua. Spring Boot 4.1 + Spring Cloud Gateway (Web
 - CORS for the web (the `Origin` header is removed before forwarding).
 - Rate limit (Redis): auth endpoints 10/min per IP; API 20/s per user.
 - `X-Correlation-Id` on every request and one access-log line per request.
+- Public, read-only guest links (no token, 2 req/s per IP): `GET /places/api/guest/{token}` and `GET /consumption/api/guest/{token}/consumption`.
 - `/*/internal/**`, `/*/actuator/**`, `/*/openapi/**`, `/*/health` → 404.
 
 ## Run
