@@ -147,6 +147,33 @@ class GatewaySecurityTest {
     }
 
     @Test
+    void guestLinkReadsArePublic() {
+        String token = "A".repeat(43);
+        for (String path : new String[]{"/places/api/guest/" + token, "/consumption/api/guest/" + token + "/consumption"}) {
+            client.get().uri(path).exchange()
+                    .expectStatus().value(status -> assertThat(status).as(path).isNotIn(401, 403, 404));
+        }
+    }
+
+    @Test
+    void guestLinkIsReadOnlyAndEverythingElseStaysProtected() {
+        String token = "A".repeat(43);
+        // writing through the public path is not allowed
+        client.post().uri("/places/api/guest/" + token)
+                .contentType(MediaType.APPLICATION_JSON).bodyValue("{}").exchange()
+                .expectStatus().isUnauthorized();
+        // the owner's management endpoints keep requiring a token
+        client.get().uri("/places/api/places/" + UUID.randomUUID() + "/guest-link").exchange()
+                .expectStatus().isUnauthorized();
+        client.get().uri("/places/api/places/" + UUID.randomUUID() + "/access").exchange()
+                .expectStatus().isUnauthorized();
+        client.get().uri("/consumption/api/places/" + UUID.randomUUID() + "/consumption").exchange()
+                .expectStatus().isUnauthorized();
+        // service-to-service lookups of the guest link are never reachable from outside
+        client.get().uri("/places/internal/guest-links/" + token).exchange().expectStatus().isNotFound();
+    }
+
+    @Test
     void internalEndpointsAreNotExposed() {
         client.get().uri("/devices/internal/metrics").exchange().expectStatus().isNotFound();
         client.get().uri("/iam/actuator/health").exchange().expectStatus().isNotFound();

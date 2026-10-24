@@ -25,6 +25,12 @@ public class RateLimitConfig {
         return new RedisRateLimiter(1, 60, 6);
     }
 
+    /** Anonymous guest links: no user to key on, so a modest per-IP budget keeps token guessing slow. */
+    @Bean
+    RedisRateLimiter guestRateLimiter() {
+        return new RedisRateLimiter(2, 20, 1);
+    }
+
     @Bean
     @Primary
     KeyResolver userKeyResolver() {

@@ -43,6 +43,34 @@ spring:
                     rate-limiter: "#{@authRateLimiter}"
                     key-resolver: "#{@ipKeyResolver}"
 
+            # Read-only guest links (HU-039..HU-041): the browser opens them without a token, so the
+            # limit is per IP. Declared before the per-service routes so these paths are matched first.
+            - id: guest-places
+              uri: ${services.places}
+              order: 0
+              predicates:
+                - Method=GET
+                - Path=/places/api/guest/{token}
+              filters:
+                - StripPrefix=1
+                - name: RequestRateLimiter
+                  args:
+                    rate-limiter: "#{@guestRateLimiter}"
+                    key-resolver: "#{@ipKeyResolver}"
+
+            - id: guest-consumption
+              uri: ${services.consumption}
+              order: 0
+              predicates:
+                - Method=GET
+                - Path=/consumption/api/guest/{token}/consumption
+              filters:
+                - StripPrefix=1
+                - name: RequestRateLimiter
+                  args:
+                    rate-limiter: "#{@guestRateLimiter}"
+                    key-resolver: "#{@ipKeyResolver}"
+
             # ?? 3. One route per service ??????????????????????????????????????????????????
             - id: iam
               uri: ${services.iam}
